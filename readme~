@@ -1,0 +1,112 @@
+Короче, 
+
+Будим ффсервер
+ffserver -f /etc/ffserver.conf
+
+Загрузчик видосов в фид
+ffmpeg -s 320x240 -r 30 -f video4linux2 -i /dev/video* http://localhost:8090/feed.ffm
+
+Грузим апач
+
+Все должно работать
+
+Апач грузит индекс, в нем встроена ссылка на сам поток.
+Поток работает отвратно, поди знай почему
+Либо я криво настроил(более вероятно)
+Либо проблема с каналом интерентов(менее вероятно,но все таки возможно)
+
+В любом случае, мне вообще не по нраву то как это тормозит\не встраивается\и тд
+Опять таки, ФЛЕШ, который не запускается чуть менее, чем нигде
+
+Итак, резюмируя мои приключения:
+VLC - занятная штука, НЕ РАБОТАЕТ, но интерфейс приятный
+Icecast - по ходу только для музыки, так и не запустил
+Red5- установился без пробле, как встраивать что то помимо
+его предустановленных примеров неясно, видимо надо использовать 
+протокол RTMP или что то в этом роде, я не разобрался
+
+ffmpeg- замечательный набор, все настроилось со второго раза(первый раз конфиги неправильные попались)
+правда все кроме флеша не работало, а флеш полный отстой.
+Но флеш работал почти идеально
+
+Ustream, Livestream, Youtube - либо слишком дорого либо непонятно
+
+Вывод: ffmpeg хорош, если что надо копать именно в его направлении. 
+Вебмки отдельно шли нормально, но встраивались плохо (моя криворукость)
+
+
+
+********************************************************************************
+*****конфиг /etc/ffserver.conf: ************************************************
+********************************************************************************
+HTTPPort 8090
+HTTPBindAddress 0.0.0.0
+MaxClients 100
+MaxBandwidth 20000
+NoDaemon
+# Фид, надо запомнить feed.ffm, он нам потребуется при запуске ffmpeg
+<Feed feed.ffm>
+File /tmp/feed.ffm
+FileMaxSize 3M
+</Feed>
+<Stream test.flv>
+# Ранее объявленный фид
+Feed feed.ffm
+Format flv
+VideoCodec flv
+VideoFrameRate 30
+VideoBufferSize 80000
+VideoBitRate 200
+# Качество видео от 1 до 31, 1 == отлично 31 == фи!
+VideoQMin 1
+VideoQMax 5
+# Разрешение, везде должно быть одинаково!
+VideoSize 352x288
+PreRoll 1
+# Если у вас есть микрофон, или вы транслируете видео со звуком, закомментируйте эту строчку
+Noaudio
+</Stream>
+# Флешка test.swf для просмотра трансляции
+<Stream test.swf>
+Feed feed.ffm
+# Будет запускаться в Adobe Flash Player
+Format swf
+VideoCodec flv
+VideoFrameRate 30
+VideoBufferSize 50000
+VideoBitRate 100
+VideoQMin 1
+VideoQMax 5
+# Разрешение, везде должно быть одинаково!
+VideoSize 352x288
+PreRoll 0
+# Если у вас есть микрофон, или вы транслируете видео со звуком, закомментируйте эту строчку
+Noaudio
+</Stream>
+<Stream index.html>
+    Format status
+</Stream>
+
+
+<Stream live.webm>
+Feed feed.ffm
+Format webm
+ 
+AudioCodec vorbis
+AudioBitRate 64
+ 
+VideoCodec libvpx
+VideoSize 720x576
+VideoFrameRate 25
+AVOptionVideo flags +global_header
+AVOptionVideo cpu-used 0
+AVOptionVideo qmin 10
+AVOptionVideo qmax 42
+AVOptionVideo quality good
+AVOptionAudio flags +global_header
+PreRoll 15
+StartSendOnKey
+VideoBitRate 400
+</Stream>
+***********************************************************************************************
+
